@@ -966,7 +966,46 @@ for (const [cx, cz, sp, cc] of [[-140, 148, 11, 0x7a3030], [60, 148, 13, 0x3a3d4
 }
 
 // ===== Extended city (~1 km) =====
-const roadG2 = [], paveG2 = [], grassG2 = [], paintG2 = [], slateG2 = [], trunkG2 = [], leafG2 = [], poleG2 = [], brickG2 = [], facG2 = [], headG2 = [], ballG = [], railG2 = [], slpG = [];
+const roadG2 = [], paveG2 = [], grassG2 = [], paintG2 = [], slateG2 = [], trunkG2 = [], leafG2 = [], poleG2 = [], brickG2 = [], headG2 = [], ballG = [], railG2 = [], slpG = [];
+const facG2a = [], facG2b = [], facG2c = [], facG2d = [];
+const awnG = [], tankG = [], clutterG = [], crossG = [], adG = [];
+const facTex2 = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#b3a488'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#8a7a60'; g.fillRect(0, h - 30, w, 30);
+  for (let yy = 26; yy < h - 46; yy += 62) for (let xx = 20; xx < w - 24; xx += 50) {
+    g.fillStyle = '#2c3338'; g.fillRect(xx, yy, 28, 40);
+    g.fillStyle = '#5a6a74'; g.fillRect(xx + 4, yy + 4, 20, 15);
+  }
+}, 2, 2);
+const facTex3 = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#46525e'; g.fillRect(0, 0, w, h);
+  for (let yy = 16; yy < h - 20; yy += 34) for (let xx = 12; xx < w - 12; xx += 30) {
+    g.fillStyle = rnd() < 0.18 ? '#d8b46a' : '#222e38';
+    g.fillRect(xx, yy, 22, 20);
+  }
+}, 2, 2);
+const facTex4 = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#7c4f3c'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#5c3a2c'; g.fillRect(0, h - 30, w, 30);
+  for (let yy = 26; yy < h - 46; yy += 62) for (let xx = 20; xx < w - 24; xx += 50) {
+    g.fillStyle = '#1f2a30'; g.fillRect(xx, yy, 28, 40);
+    g.fillStyle = '#8a98a0'; g.fillRect(xx + 4, yy + 4, 20, 15);
+  }
+}, 2, 2);
+const facMat2 = new THREE.MeshStandardMaterial({ map: facTex2, roughness: 0.9 });
+const facMat3 = new THREE.MeshStandardMaterial({ map: facTex3, roughness: 0.6, metalness: 0.2 });
+const facMat4 = new THREE.MeshStandardMaterial({ map: facTex4, roughness: 0.9 });
+const awnM = [0xa04a3a, 0x3a6a52, 0x3a5a7c, 0xc09040].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 }));
+const adTex = canvasTex(256, 128, (g, w, h) => {
+  g.fillStyle = '#1c2a34'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#d8483c'; g.fillRect(12, 12, 60, 60);
+  g.fillStyle = '#e8dfc8'; g.font = '700 44px Georgia, serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.fillText('MERIDIAN', 84, 42);
+  g.fillStyle = '#c9a35b'; g.font = '600 22px Georgia, serif';
+  g.fillText('HOTEL · CAFE · METRO', 84, 82);
+});
+const adMat = new THREE.MeshStandardMaterial({ map: adTex, roughness: 0.6, emissive: 0x605030, emissiveMap: adTex, emissiveIntensity: 0.5 });
+const awnGeos = awnM.map(() => []);
 grassG2.push(box(2000, 0.1, 998, 0, 0.9, 591));
 grassG2.push(box(2000, 0.1, 798, 0, 0.9, -491));
 grassG2.push(box(967, 0.1, 184, -516.5, 0.9, 0));
@@ -992,12 +1031,18 @@ for (const rx of [-160, -320, 160, 320]) {
   for (let z = -540; z <= 740; z += 5) paintG2.push(box(0.16, 0.015, 2.2, rx, 1.045, z));
 }
 function block(bx0, bz0, bx1, bz1, n, hmin, hmax) {
+  const FACS = [facG2a, facG2b, facG2c, facG2d];
   for (let i = 0; i < n; i++) {
     const bw = 20 + rnd() * 16, bh = hmin + rnd() * (hmax - hmin), bd = 16 + rnd() * 10;
     const bx = bx0 + bw / 2 + rnd() * (bx1 - bx0 - bw);
     const bz = bz0 + bd / 2 + rnd() * (bz1 - bz0 - bd);
-    facG2.push(box(bw, bh, bd, bx, 1.0 + bh / 2, bz));
+    FACS[(rnd() * 4) | 0].push(box(bw, bh, bd, bx, 1.0 + bh / 2, bz));
     slateG2.push(box(bw + 0.5, 0.4, bd + 0.5, bx, 1.0 + bh + 0.18, bz));
+    const ry = 1.0 + bh + 0.4;
+    if (rnd() < 0.45) tankG.push(new THREE.CylinderGeometry(1.4, 1.4, 2.6, 10).translate(bx + bw * 0.2, ry + 1.3, bz + bd * 0.15));
+    if (rnd() < 0.6) clutterG.push(box(2.5 + rnd() * 2, 1 + rnd() * 1.2, 2, bx - bw * 0.2, ry + 0.7, bz - bd * 0.15));
+    if (rnd() < 0.3) poleG2.push(new THREE.CylinderGeometry(0.08, 0.12, 6 + rnd() * 5, 5).translate(bx, ry + 3, bz));
+    if (rnd() < 0.5) awnGeos[(rnd() * 4) | 0].push(box(bw * 0.6, 0.14, 1.8, bx, 4.2, bz - bd / 2 - 0.9, 0.3));
   }
 }
 block(-140, 200, -50, 300, 5, 10, 26);
@@ -1059,11 +1104,50 @@ for (const rx of [-160, -320, 160, 320]) for (let z = -400; z <= 700; z += 90) {
   poleG2.push(new THREE.CylinderGeometry(0.06, 0.1, 5, 7).translate(ox, 3.5, z));
   headG2.push(new THREE.SphereGeometry(0.22, 10, 8).translate(ox, 6.0, z));
 }
+// church landmark
+brickG2.push(box(14, 12, 20, 140, 7, 120));
+slateG2.push(box(15, 0.5, 21, 140, 13.2, 120));
+const spire = new THREE.ConeGeometry(3.4, 9, 4);
+spire.rotateY(Math.PI / 4);
+spire.translate(140, 17.5, 120);
+slateG2.push(spire);
+poleG2.push(box(0.18, 3.4, 0.18, 140, 23.6, 120));
+poleG2.push(box(1.1, 0.18, 0.18, 140, 24.4, 120));
+// billboards facing the station on the near building row
+for (const bx of [-62, 62]) {
+  adG.push(box(18, 9, 0.5, bx, 12, 164.8));
+}
+// zebra crossings at grid intersections
+for (const rx of [-320, -160, 160, 320]) for (const rz of [150.75, 320, 500, 700, -160, -340, -520]) {
+  for (let j = -4; j <= 4; j++) {
+    crossG.push(box(0.55, 0.02, 9.5, rx + j * 1.7, 1.05, rz));
+    crossG.push(box(9.5, 0.02, 0.55, rx, 1.05, rz + j * 1.7));
+  }
+}
+// bus stop shelter on plaza edge
+poleG2.push(new THREE.CylinderGeometry(0.07, 0.07, 3, 6).translate(14, 2.5, 141.5));
+poleG2.push(new THREE.CylinderGeometry(0.07, 0.07, 3, 6).translate(21, 2.5, 141.5));
+slateG2.push(box(8.6, 0.25, 2.4, 17.5, 4.1, 141.5));
+// street trees along main road
+for (let x = -400; x <= 400; x += 55) {
+  tree2(x + rnd() * 8, 142.2, 0.9 + rnd() * 0.4);
+  tree2(x + 20 + rnd() * 8, 159.4, 0.8 + rnd() * 0.4);
+}
+// park planters on the plaza
+for (const px of [-38, -20, 20, 38]) {
+  brickG2.push(box(4.5, 1.0, 4.5, px, 1.55, 96));
+  leafG2.push(new THREE.IcosahedronGeometry(1.5, 1).translate(px, 3.0, 96));
+}
 mesh(roadG2, asphalt);
 mesh(paveG2, paveM);
 mesh(grassG2, grassM);
 mesh(paintG2, paintM);
 mesh(slateG2, slate, true);
+awnGeos.forEach((g, i) => mesh(g, awnM[i], true));
+mesh(tankG, timber, true);
+mesh(clutterG, darkSlab, true);
+mesh(crossG, paintM);
+mesh(adG, adMat);
 mesh(trunkG2, trunkM, true);
 mesh(leafG2, leafM, true);
 mesh(poleG2, iron);
@@ -1071,7 +1155,11 @@ mesh(headG2, bulbMat);
 mesh(ballG, darkSlab);
 mesh(railG2, railMat);
 mesh(slpG, timber);
-mesh(facG2, facMat, true);
+mesh(facG2a, facMat, true);
+mesh(facG2b, facMat2, true);
+mesh(facG2c, facMat3, true);
+mesh(facG2d, facMat4, true);
+mesh(brickG2, brickMat, true);
 for (const [cx, cz, sp, cc] of [[-160, 200, 9, 0x4a6a3a], [160, -100, -11, 0x6a4a3a], [320, 300, 10, 0x3a5a6a], [-320, 0, -9, 0x7a7a6a]]) {
   const c = makeCar(cc);
   c.position.set(cx, 1.05, cz);
