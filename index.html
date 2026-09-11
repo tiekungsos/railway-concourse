@@ -132,6 +132,7 @@
   <button id="mb-fp">1P</button>
   <button id="mb-tp">3P</button>
   <button id="mb-tour">Tour</button>
+  <button id="mb-fs">Full</button>
 </div>
 <div id="joy"><div id="joyKnob"></div></div>
 <button id="runBtn">Run</button>
@@ -1840,6 +1841,12 @@ document.getElementById('mb-orbit').onclick = () => setMode('orbit');
 document.getElementById('mb-fp').onclick = () => setMode('fp');
 document.getElementById('mb-tp').onclick = () => setMode('tp');
 document.getElementById('mb-tour').onclick = () => setMode('tour');
+const fsBtn = document.getElementById('mb-fs');
+fsBtn.onclick = () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+};
+document.addEventListener('fullscreenchange', () => fsBtn.classList.toggle('on', !!document.fullscreenElement));
 let tween = null;
 function flyTo(v) {
   if (mode !== 'orbit') setMode('orbit');
@@ -1882,6 +1889,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Digit7') setMode('fp');
   if (e.code === 'Digit8') setMode('tp');
   if (e.code === 'KeyT') setMode('tour');
+  if (e.code === 'KeyF') fsBtn.onclick();
   if (e.key === 'Escape' && mode === 'tour') setMode('orbit');
   const i = +e.key - 1;
   if (e.key === '0' && VIEWS[6]) flyTo(VIEWS[6]);
