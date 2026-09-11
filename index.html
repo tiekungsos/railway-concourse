@@ -1809,7 +1809,12 @@ const tourCurve = new THREE.CatmullRomCurve3([
 ], true, 'catmullrom', 0.3);
 const tourPts = tourCurve.getSpacedPoints(2400);
 const tourLen = tourCurve.getLength();
-let tourI = 0;
+let tourI = 0, tourSp = 55;
+function tourPt(i) {
+  const N = tourPts.length;
+  const i0 = ((Math.floor(i) % N) + N) % N, i1 = (i0 + 1) % N;
+  return tourPts[i0].clone().lerp(tourPts[i1], i - Math.floor(i));
+}
 const hintEl = document.querySelector('.hint');
 function setMode(m) {
   if (mode === m) return;
@@ -2123,13 +2128,12 @@ function loop() {
   }
   if (mode === 'orbit') controls.update();
   else if (mode === 'tour') {
-    const N = tourPts.length;
-    const i0 = Math.floor(tourI) % N, i1 = (i0 + 1) % N;
-    const p = tourPts[i0].clone().lerp(tourPts[i1], tourI % 1);
+    const p = tourPt(tourI);
     const inShed = p.z < 94 && Math.abs(p.x) < 32;
-    tourI = (tourI + (inShed ? 6.5 : 55) * dt * N / tourLen) % N;
+    tourSp += ((inShed ? 9.5 : 55) - tourSp) * Math.min(1, dt * 2.5);
+    tourI += tourSp * dt * tourPts.length / tourLen;
     camera.position.copy(p);
-    camera.lookAt(tourPts[Math.floor(tourI + 34) % N]);
+    camera.lookAt(tourPt(tourI + 30));
   }
   else updateWalk(dt);
   composer.render();
