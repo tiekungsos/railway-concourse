@@ -967,7 +967,10 @@ for (const [cx, cz, sp, cc] of [[-140, 148, 11, 0x7a3030], [60, 148, 13, 0x3a3d4
 
 // ===== Extended city (~1 km) =====
 const roadG2 = [], paveG2 = [], grassG2 = [], paintG2 = [], slateG2 = [], trunkG2 = [], leafG2 = [], poleG2 = [], brickG2 = [], facG2 = [], headG2 = [], ballG = [], railG2 = [], slpG = [];
-grassG2.push(box(2000, 0.1, 2000, 0, 0.9, 100));
+grassG2.push(box(2000, 0.1, 998, 0, 0.9, 591));
+grassG2.push(box(2000, 0.1, 798, 0, 0.9, -491));
+grassG2.push(box(967, 0.1, 184, -516.5, 0.9, 0));
+grassG2.push(box(967, 0.1, 184, 516.5, 0.9, 0));
 for (const rz of [320, 500, 700, -160, -340, -520]) {
   roadG2.push(box(900, 0.07, 11.5, 0, 1.0, rz));
   paveG2.push(box(900, 0.07, 4, 0, 1.0, rz - 7.8));
