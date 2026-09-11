@@ -270,7 +270,7 @@ function slabTop(w, l, x, z) {
   return g;
 }
 function mesh(geos, mat, cast = false, recv = true) {
-  const m = new THREE.Mesh(Array.isArray(geos) ? mergeGeometries(geos, false) : geos, mat);
+  const m = new THREE.Mesh(Array.isArray(geos) ? mergeGeometries(geos.map(g => g.index ? g.toNonIndexed() : g), false) : geos, mat);
   m.castShadow = cast; m.receiveShadow = recv;
   scene.add(m);
   return m;
@@ -821,6 +821,150 @@ const hairC = [0x2a2018, 0x4a3826, 0x6b655e, 0x181614, 0x8a8078];
 const legC = [0x26292e, 0x37302a, 0x2e3438];
 let seed = 7;
 const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+// ===== City outside the south portals =====
+const asphalt = new THREE.MeshStandardMaterial({ color: 0x33363b, roughness: 0.95 });
+const paveM = new THREE.MeshStandardMaterial({ color: 0x97938a, roughness: 0.9 });
+const grassM = new THREE.MeshStandardMaterial({ color: 0x54703f, roughness: 1 });
+const slate = new THREE.MeshStandardMaterial({ color: 0x3c424a, roughness: 0.85 });
+const paintM = new THREE.MeshStandardMaterial({ color: 0xd9d9d0, roughness: 0.7 });
+const trunkM = new THREE.MeshStandardMaterial({ color: 0x4c3a26, roughness: 0.95 });
+const leafM = new THREE.MeshStandardMaterial({ color: 0x43612f, roughness: 1 });
+const signRed = new THREE.MeshStandardMaterial({ color: 0xa33b2e, roughness: 0.6 });
+const signBlue = new THREE.MeshStandardMaterial({ color: 0x2e5a8a, roughness: 0.6 });
+const roadG = [], paveG = [], grassG = [], paintG = [], slateG = [], trunkG = [], leafG = [], poleG = [], stopG = [], blueG = [], cityBrickG = [], lampHeadG = [];
+
+const facTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#8a6a50'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#5d4a38'; g.fillRect(0, h - 30, w, 30);
+  for (let yy = 26; yy < h - 46; yy += 62) for (let xx = 20; xx < w - 24; xx += 50) {
+    g.fillStyle = '#26323b'; g.fillRect(xx, yy, 28, 40);
+    g.fillStyle = '#485c68'; g.fillRect(xx + 4, yy + 4, 20, 15);
+  }
+}, 2, 2);
+const facMat = new THREE.MeshStandardMaterial({ map: facTex, roughness: 0.9 });
+const facGeos = [];
+
+grassG.push(box(280, 0.12, 210, 0, 0.94, 196));
+paveG.push(box(96, 0.06, 50, 0, 1.0, 117));
+roadG.push(box(280, 0.07, 11.5, 0, 1.0, 150.75));
+paveG.push(box(280, 0.07, 4, 0, 1.0, 143));
+paveG.push(box(280, 0.07, 4, 0, 1.0, 159));
+for (let x = -136; x <= 136; x += 5) paintG.push(box(2.2, 0.015, 0.16, x, 1.045, 150.75));
+paintG.push(box(280, 0.015, 0.14, 0, 1.045, 145.5));
+paintG.push(box(280, 0.015, 0.14, 0, 1.045, 156));
+
+for (let i = 0; i < 8; i++) {
+  const bw = 26 + rnd() * 8, bh = 12 + rnd() * 10, bd = 16 + rnd() * 6;
+  const bx = -126 + i * 34 + rnd() * 3, bz = 172 + bd / 2;
+  facGeos.push(box(bw, bh, bd, bx, 1.0 + bh / 2, bz));
+  slateG.push(box(bw + 0.6, 0.5, bd + 0.6, bx, 1.0 + bh + 0.22, bz));
+}
+for (let i = 0; i < 4; i++) {
+  const hx = -66 - i * 15, hz = 108 + (i % 2) * 4;
+  cityBrickG.push(box(9, 5.4, 8, hx, 3.7, hz));
+  const s = new THREE.Shape();
+  s.moveTo(-5.2, 0); s.lineTo(5.2, 0); s.lineTo(0, 2.6); s.closePath();
+  const rg = new THREE.ExtrudeGeometry(s, { depth: 8.6, bevelEnabled: false });
+  rg.translate(0, 0, -4.3);
+  rg.translate(hx, 6.4, hz);
+  slateG.push(rg);
+}
+grassG.push(box(78, 0.08, 46, 84, 1.0, 114));
+paveG.push(box(78, 0.05, 3, 84, 1.02, 96));
+paveG.push(box(3, 0.05, 46, 84, 1.02, 114));
+function tree(x, z, s = 1) {
+  trunkG.push(new THREE.CylinderGeometry(0.16 * s, 0.26 * s, 2.6 * s, 7).translate(x, 1.0 + 1.3 * s, z));
+  leafG.push(new THREE.IcosahedronGeometry(1.8 * s, 1).translate(x, 1.0 + 3.6 * s, z));
+  leafG.push(new THREE.IcosahedronGeometry(1.2 * s, 1).translate(x + 0.9 * s, 1.0 + 4.1 * s, z + 0.4 * s));
+}
+for (const [tx, tz, ts] of [[52, 96, 1.1], [60, 118, 1.3], [70, 132, 0.9], [88, 100, 1.2], [98, 124, 1.4], [110, 102, 1.0], [116, 130, 1.15], [50, 130, 0.85], [76, 108, 1.05], [-40, 98, 1.1], [-52, 96, 0.95]]) tree(tx, tz, ts);
+
+grassG.push(box(66, 0.08, 46, 88, 1.0, 200));
+paintG.push(box(60, 0.02, 0.25, 88, 1.05, 180));
+paintG.push(box(60, 0.02, 0.25, 88, 1.05, 220));
+paintG.push(box(0.25, 0.02, 40.4, 58, 1.05, 200));
+paintG.push(box(0.25, 0.02, 40.4, 118, 1.05, 200));
+paintG.push(box(0.25, 0.02, 40.4, 88, 1.05, 200));
+for (const gz of [180, 220]) {
+  const sgn = gz < 200 ? 1 : -1;
+  paintG.push(box(14, 0.02, 0.25, 88, 1.05, gz + sgn * 14));
+  paintG.push(box(0.25, 0.02, 14, 81, 1.05, gz + sgn * 7));
+  paintG.push(box(0.25, 0.02, 14, 95, 1.05, gz + sgn * 7));
+}
+const ringG = new THREE.TorusGeometry(5, 0.1, 6, 40);
+ringG.rotateX(Math.PI / 2); ringG.translate(88, 1.06, 200);
+paintG.push(ringG);
+for (const gz of [180.2, 219.8]) {
+  paintG.push(tube(V3(84.4, 1.05, gz), V3(84.4, 3.5, gz), 0.06));
+  paintG.push(tube(V3(91.6, 1.05, gz), V3(91.6, 3.5, gz), 0.06));
+  paintG.push(tube(V3(84.4, 3.5, gz), V3(91.6, 3.5, gz), 0.06));
+}
+for (const lz of [142.2, 159.3]) for (let lx = -120; lx <= 120; lx += 30) {
+  const ox = lz > 150 ? 15 : 0;
+  poleG.push(new THREE.CylinderGeometry(0.06, 0.1, 5, 7).translate(lx + ox, 3.5, lz));
+  lampHeadG.push(new THREE.SphereGeometry(0.22, 10, 8).translate(lx + ox, 6.0, lz));
+}
+function signPole(x, z, h = 2.8) { poleG.push(new THREE.CylinderGeometry(0.05, 0.06, h, 6).translate(x, 1.0 + h / 2, z)); }
+for (const [sx, sz, ry] of [[-30, 144.6, 0], [46, 157.4, Math.PI]]) {
+  signPole(sx, sz);
+  stopG.push(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 8).rotateX(Math.PI / 2).rotateY(ry).translate(sx, 3.6, sz));
+}
+for (const [sx, sz, ry] of [[30, 144.6, 0], [-50, 157.4, Math.PI]]) {
+  signPole(sx, sz);
+  blueG.push(box(1.6, 0.7, 0.05, sx, 3.4, sz, 0, ry));
+}
+mesh(roadG, asphalt);
+mesh(paveG, paveM);
+mesh(grassG, grassM);
+mesh(paintG, paintM);
+mesh(slateG, slate, true);
+mesh(trunkG, trunkM, true);
+mesh(leafG, leafM, true);
+mesh(poleG, iron);
+mesh(stopG, signRed);
+mesh(blueG, signBlue);
+mesh(cityBrickG, brickMat, true);
+mesh(lampHeadG, bulbMat);
+const facMesh = mesh(facGeos, facMat, true);
+
+const carGlass = new THREE.MeshStandardMaterial({ color: 0x1c242b, roughness: 0.25, metalness: 0.55 });
+const traffic = [];
+function makeCar(col) {
+  const gp = new THREE.Group();
+  const body = new THREE.Mesh(new RoundedBoxGeometry(4.2, 0.95, 1.85, 3, 0.2), new THREE.MeshStandardMaterial({ color: col, roughness: 0.4, metalness: 0.45 }));
+  body.position.y = 0.6;
+  body.castShadow = true;
+  const cab = new THREE.Mesh(new RoundedBoxGeometry(2.0, 0.75, 1.6, 3, 0.18), carGlass);
+  cab.position.set(-0.25, 1.32, 0);
+  gp.add(body, cab);
+  const wg = new THREE.CylinderGeometry(0.32, 0.32, 0.24, 10);
+  wg.rotateX(Math.PI / 2);
+  for (const [wx, wz] of [[-1.35, 0.82], [1.35, 0.82], [-1.35, -0.82], [1.35, -0.82]]) {
+    const wm = new THREE.Mesh(wg, iron);
+    wm.position.set(wx, 0.33, wz);
+    gp.add(wm);
+  }
+  for (const hz of [-0.55, 0.55]) {
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), bulbMat);
+    hl.position.set(2.1, 0.62, hz);
+    gp.add(hl);
+  }
+  return gp;
+}
+for (const [cx, cz, cc] of [[-52, 143.6, 0x7a3030], [-20, 143.6, 0x3a3d42], [24, 143.6, 0x2f4d6b], [58, 158.4, 0x9a8f6a], [-88, 158.4, 0x5c4a6e]]) {
+  const c = makeCar(cc);
+  c.position.set(cx, 1.05, cz);
+  c.rotation.y = cz < 150 ? 0 : Math.PI;
+  scene.add(c);
+}
+for (const [cx, cz, sp, cc] of [[-140, 148, 11, 0x7a3030], [60, 148, 13, 0x3a3d42], [-30, 153.4, -10, 0x9a8f6a]]) {
+  const c = makeCar(cc);
+  c.position.set(cx, 1.05, cz);
+  c.rotation.y = sp > 0 ? 0 : Math.PI;
+  traffic.push({ g: c, sp });
+  scene.add(c);
+}
+
 const animWalk = [], animChat = [], animIdle = [], animBoard = [], mixers = [];
 function personProc(x, z, opt = {}) {
   const s = 0.9 + rnd() * 0.16;
@@ -897,7 +1041,7 @@ function personProc(x, z, opt = {}) {
     g.add(b);
   }
   g.scale.setScalar(s);
-  g.position.set(x, 1.05, z);
+  g.position.set(x, opt.y ?? 1.05, z);
   g.rotation.y = rnd() * Math.PI * 2;
   scene.add(g);
   return { g, head, torso, armL, armR, legL, legR };
@@ -934,26 +1078,26 @@ function person(x, z, opt = {}) {
     b.castShadow = true;
     g.add(b);
   }
-  g.position.set(x, 1.05, z);
+  g.position.set(x, opt.y ?? 1.05, z);
   g.rotation.y = rnd() * Math.PI * 2;
   scene.add(g);
   return p;
 }
 function walker(x0, z0, x1, z1, sp, off) {
-  const p = person(x0, z0, { bag: rnd() < 0.6 });
+  const p = person(x0, z0, { bag: rnd() < 0.6, y: floorY(x0, z0) });
   if (p.walk) { p.walk.timeScale = sp * 0.7; p.walk.play(); p.walk.time = rnd() * p.walk.getClip().duration; }
-  animWalk.push({ ...p, x0, z0, x1, z1, sp, off, len: Math.hypot(x1 - x0, z1 - z0) });
+  animWalk.push({ ...p, x0, z0, x1, z1, sp, off, len: Math.hypot(x1 - x0, z1 - z0), fy: floorY(x0, z0) });
 }
 function chatPair(ax, az, bx, bz) {
   [[ax, az, bx, bz, true], [bx, bz, ax, az, false]].forEach(([x, z, ox, oz, spk]) => {
-    const p = person(x, z, { bag: rnd() < 0.4 });
+    const p = person(x, z, { bag: rnd() < 0.4, y: floorY(x, z) });
     p.g.rotation.y = Math.atan2(ox - x, oz - z);
     if (p.idle) { p.idle.play(); p.idle.time = rnd() * p.idle.getClip().duration; p.idle.timeScale = 0.85 + rnd() * 0.3; }
     animChat.push({ ...p, ph: rnd() * 7, spk });
   });
 }
 function stander(x, z, ry) {
-  const p = person(x, z, { bag: rnd() < 0.5 });
+  const p = person(x, z, { bag: rnd() < 0.5, y: floorY(x, z) });
   p.g.rotation.y = ry;
   if (p.idle) { p.idle.play(); p.idle.time = rnd() * p.idle.getClip().duration; }
   animIdle.push({ ...p, ph: rnd() * 7 });
@@ -1019,6 +1163,13 @@ function initPeople() {
   stander(-18.2, 63.6, 0.1);
   stander(-17.4, 62.2, -0.15);
   stander(-19.4, 61, 0.25);
+  walker(-60, 143.2, 60, 143.2, 1.15, 12);
+  walker(30, 158.8, -70, 158.8, 1.0, 40);
+  walker(96, 97, 60, 97, 1.15, 33);
+  walker(84, 96, 84, 136, 1.2, 18);
+  walker(88, 184, 88, 216, 1.5, 44);
+  chatPair(18, 106, 19.5, 107.4);
+  stander(-36, 143.5, Math.PI * 0.5);
   avatar = person(0, 74, {});
   avatar.g.rotation.y = Math.PI;
   avatar.g.visible = (mode === 'tp');
@@ -1065,6 +1216,11 @@ solid(-0.15, 0.15, 11.85, 12.15);
 for (let i = 0; i < 7; i++) solid(-4.0, -2.8, -59 + i * 14, -57 + i * 14);
 for (let i = 0; i < 7; i++) solid(13.6, 14.8, -52 + i * 14, -50 + i * 14);
 for (const tx of [-21, -9, 9, 21]) solid(tx - 1.25, tx + 1.25, 40.1, 43.0);
+for (const [a, b] of [[-32, -13.6], [-8.4, -2.4], [2.4, 8.4], [13.6, 32]]) solid(a, b, 89.4, 91.8);
+solid(-138, 138, 164, 196);
+for (const hx of [-66, -81, -96, -111]) solid(hx - 5.5, hx + 5.5, 102, 113.5);
+for (const [cx, cz] of [[-52, 143.6], [-20, 143.6], [24, 143.6], [58, 158.4], [-88, 158.4]]) solid(cx - 2.3, cx + 2.3, cz - 1.1, cz + 1.1);
+for (const lz of [142.2, 159.3]) for (let lx = -120; lx <= 120; lx += 30) { const ox = lz > 150 ? 15 : 0; solid(lx + ox - 0.2, lx + ox + 0.2, lz - 0.2, lz + 0.2); }
 
 const player = { pos: V3(0, 1.05, 74), yaw: 0, pitch: -0.02 };
 const keysDown = new Set();
@@ -1072,6 +1228,7 @@ let mode = 'orbit', stepAcc = 0, bobPh = 0;
 camera.rotation.order = 'YXZ';
 
 function floorY(x, z) {
+  if (z > 91.5) return 1.0;
   if (z < 44) for (const [a, b] of [[-22.7, -19.3], [-10.7, -7.3], [7.3, 10.7], [19.3, 22.7]]) if (x > a && x < b) return 0.05;
   return 1.05;
 }
@@ -1098,8 +1255,9 @@ function updateWalk(dt) {
   if (moving) { const il = sp * dt / Math.hypot(dx, dz); dx *= il; dz *= il; }
   const np = player.pos.clone();
   np.x += dx; np.z += dz;
-  np.x = Math.max(-30.4, Math.min(30.4, np.x));
-  np.z = Math.max(-88.5, Math.min(89, np.z));
+  const xmax = np.z > 91.5 ? 108 : 30.4;
+  np.x = Math.max(-xmax, Math.min(xmax, np.x));
+  np.z = Math.max(-88.5, Math.min(238, np.z));
   const dyn = [];
   for (const [tr, tx, front] of [[trainA, -9, 26], [trainB, 21, 20]]) {
     if (tr) dyn.push({ x0: tx - 1.7, x1: tx + 1.7, z0: front + tr.position.z - 63.5, z1: front + tr.position.z + 0.9 });
@@ -1363,6 +1521,7 @@ const VIEWS = [
   { n: 'The Vault', p: [10.5, 1.9, 34], t: [-8, 26, -40] },
   { n: 'Buffers', p: [-6.5, 2.3, 72], t: [3.5, 4.2, 36] },
   { n: 'Section', p: [58, 44, 4], t: [0, 7, -6], roof: true },
+  { n: 'Forecourt', p: [-34, 5.5, 168], t: [0, 13, 96], k: '0' },
 ];
 const hintEl = document.querySelector('.hint');
 function setMode(m) {
@@ -1410,7 +1569,7 @@ function flyTo(v) {
 const navEl = document.getElementById('views');
 VIEWS.forEach((v, i) => {
   const b = document.createElement('button');
-  b.innerHTML = `<span class="k">${i + 1}</span>${v.n}`;
+  b.innerHTML = `<span class="k">${v.k ?? i + 1}</span>${v.n}`;
   b.onclick = () => flyTo(v);
   navEl.appendChild(b);
 });
@@ -1436,7 +1595,8 @@ addEventListener('keydown', e => {
   if (e.code === 'Digit7') setMode('fp');
   if (e.code === 'Digit8') setMode('tp');
   const i = +e.key - 1;
-  if (VIEWS[i]) flyTo(VIEWS[i]);
+  if (e.key === '0' && VIEWS[6]) flyTo(VIEWS[6]);
+  else if (VIEWS[i]) flyTo(VIEWS[i]);
 });
 addEventListener('keyup', e => keysDown.delete(e.code));
 addEventListener('mousemove', e => {
@@ -1549,7 +1709,7 @@ function loop() {
     const sw = Math.sin(step);
     w.g.position.x = w.x0 + (w.x1 - w.x0) * tri;
     w.g.position.z = w.z0 + (w.z1 - w.z0) * tri;
-    w.g.position.y = 1.05 + (w.mixer ? 0 : Math.abs(Math.cos(step)) * 0.032);
+    w.g.position.y = (w.fy ?? 1.05) + (w.mixer ? 0 : Math.abs(Math.cos(step)) * 0.032);
     w.g.rotation.y = Math.atan2((w.x1 - w.x0) * dir, (w.z1 - w.z0) * dir);
     if (!w.mixer) {
       w.legL.rotation.x = sw * 0.52;
@@ -1617,6 +1777,11 @@ function loop() {
     }
   }
   for (const m of mixers) m.update(dt);
+  for (const c of traffic) {
+    c.g.position.x += c.sp * dt;
+    if (c.sp > 0 && c.g.position.x > 150) c.g.position.x = -150;
+    if (c.sp < 0 && c.g.position.x < -150) c.g.position.x = 150;
+  }
   dust.position.y = Math.sin(et * 0.06) * 1.6;
   dust.position.x = Math.sin(et * 0.045) * 2.5;
   dust.rotation.y = et * 0.0022;
