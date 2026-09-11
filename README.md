@@ -9,7 +9,8 @@ An inspectable 3D Victorian railway concourse built with Three.js — a single-s
 - 19 twin-chord lattice arch ribs on 10 m bays, alternating solid/glazed roof bands
 - Two animated trains with arrive/dwell/depart cycles, headlamps and rumble audio
 - Passengers (rigged Quaternius characters, CC0) with real Walk/Idle clips — they walk, chat in pairs, queue, and board/alight through train doors while stopped
-- Surrounding city (~1 km): plaza forecourt, road grid with moving + parked cars, brick building blocks, houses, skyline towers, public park with trees, football pitch, rail yard with freight wagons to the north, street lamps and traffic signs — walk out through the south portals
+- Surrounding city (~1 km): plaza forecourt, road grid with moving + parked cars, dense mixed-use blocks (brick / stone / office / towers incl. setback + cylindrical forms), landmark needle tower, river with bridges, public park, football pitch, north rail yard, street lamps, signs, zebra crossings — walk out through the south portals
+- **Tour mode** — cinematic drone flight: sweeps in over the city, through the south portal, circles the nave, exits and loops back out (key `T` or the Tour button; click/Esc to exit)
 - Camera presets: Nave, Platform, Arcade, The Vault, Buffers, Section, Forecourt (key 0), City aerial (key 9)
 - Walk modes: first-person (1P) and third-person (3P) with collisions, footsteps, pointer-lock mouse look
 - Mobile: virtual joystick + drag-look + hold-to-run in walk modes

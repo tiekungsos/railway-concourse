@@ -131,6 +131,7 @@
   <button id="mb-orbit" class="on">Orbit</button>
   <button id="mb-fp">1P</button>
   <button id="mb-tp">3P</button>
+  <button id="mb-tour">Tour</button>
 </div>
 <div id="joy"><div id="joyKnob"></div></div>
 <button id="runBtn">Run</button>
@@ -1049,7 +1050,15 @@ function block(bx0, bz0, bx1, bz1, n, hmin, hmax) {
     const bw = 20 + rnd() * 16, bh = hmin + rnd() * (hmax - hmin), bd = 16 + rnd() * 10;
     const bx = bx0 + bw / 2 + rnd() * (bx1 - bx0 - bw);
     const bz = bz0 + bd / 2 + rnd() * (bz1 - bz0 - bd);
-    FACS[(rnd() * 4) | 0].push(box(bw, bh, bd, bx, 1.0 + bh / 2, bz));
+    const FA = FACS[(rnd() * 4) | 0], kind = rnd();
+    if (kind < 0.18 && bh > 20) {
+      FA.push(box(bw, bh * 0.6, bd, bx, 1.0 + bh * 0.3, bz));
+      FA.push(box(bw * 0.72, bh * 0.45, bd * 0.72, bx, 1.0 + bh * 0.6 + bh * 0.225, bz));
+    } else if (kind < 0.3) {
+      FA.push(new THREE.CylinderGeometry(bw * 0.42, bw * 0.45, bh, 14).translate(bx, 1.0 + bh / 2, bz));
+    } else {
+      FA.push(box(bw, bh, bd, bx, 1.0 + bh / 2, bz));
+    }
     slateG2.push(box(bw + 0.5, 0.4, bd + 0.5, bx, 1.0 + bh + 0.18, bz));
     const ry = 1.0 + bh + 0.4;
     if (rnd() < 0.45) tankG.push(new THREE.CylinderGeometry(1.4, 1.4, 2.6, 10).translate(bx + bw * 0.2, ry + 1.3, bz + bd * 0.15));
@@ -1059,26 +1068,56 @@ function block(bx0, bz0, bx1, bz1, n, hmin, hmax) {
     for (let h = 0; h < 3; h++) if (rnd() < 0.5) leafG2.push(new THREE.IcosahedronGeometry(0.9 + rnd() * 0.5, 1).translate(bx - bw / 2 + rnd() * bw, 1.7, bz - bd / 2 - 1.4));
   }
 }
-block(-140, 200, -50, 300, 5, 10, 26);
-block(50, 200, 140, 300, 5, 10, 26);
-block(-140, 340, 140, 480, 8, 14, 34);
-block(170, 340, 460, 480, 8, 12, 30);
-block(-460, 340, -170, 480, 8, 12, 30);
-block(170, 170, 300, 300, 5, 10, 24);
-block(-300, 170, -170, 300, 5, 10, 24);
-block(-140, 530, 140, 680, 6, 40, 70);
-block(170, 530, 460, 680, 5, 35, 60);
-block(-460, 530, -170, 680, 5, 35, 60);
-block(45, -80, 140, 60, 6, 8, 18);
-block(-140, -80, -45, 60, 6, 8, 18);
-block(-140, -300, -55, -180, 4, 8, 20);
-block(55, -300, 140, -180, 4, 8, 20);
-block(170, -300, 460, -180, 6, 8, 18);
-block(-460, -300, -170, -180, 6, 8, 18);
-block(-140, -500, -55, -360, 4, 8, 18);
-block(55, -500, 140, -360, 4, 8, 18);
-block(170, -500, 460, -360, 6, 8, 18);
-block(-460, -500, -170, -360, 6, 8, 18);
+block(-140, 200, -50, 300, 8, 14, 44);
+block(50, 200, 140, 300, 8, 14, 44);
+block(-140, 340, 140, 480, 12, 18, 50);
+block(170, 340, 460, 480, 11, 12, 40);
+block(-460, 340, -170, 480, 11, 12, 40);
+block(170, 170, 300, 300, 8, 10, 30);
+block(-300, 170, -170, 300, 8, 10, 30);
+block(310, 170, 460, 300, 6, 8, 22);
+block(-460, 170, -310, 300, 6, 8, 22);
+block(-140, 530, 140, 680, 10, 45, 90);
+block(170, 530, 460, 680, 9, 35, 75);
+block(-460, 530, -170, 680, 9, 35, 75);
+block(470, 200, 640, 480, 9, 10, 40);
+block(-640, 200, -470, 480, 9, 10, 40);
+block(45, -80, 140, 60, 9, 8, 20);
+block(-140, -80, -45, 60, 9, 8, 20);
+block(150, -80, 300, 60, 6, 8, 22);
+block(-300, -80, -150, 60, 6, 8, 22);
+block(-140, -300, -55, -180, 5, 8, 22);
+block(55, -300, 140, -180, 5, 8, 22);
+block(170, -300, 460, -180, 9, 8, 24);
+block(-460, -300, -170, -180, 9, 8, 24);
+block(-140, -500, -55, -360, 5, 8, 20);
+block(55, -500, 140, -360, 5, 8, 20);
+block(170, -500, 460, -360, 9, 8, 22);
+block(-460, -500, -170, -360, 9, 8, 22);
+block(470, -300, 640, -80, 6, 8, 20);
+block(-640, -300, -470, -80, 6, 8, 20);
+// landmark needle tower
+facG2c.push(box(12, 14, 12, 90, 8, 430));
+poleG2.push(new THREE.CylinderGeometry(2.0, 4.6, 120, 10).translate(90, 61, 430));
+slateG2.push(new THREE.CylinderGeometry(7, 7, 3.4, 12).translate(90, 118, 430));
+poleG2.push(new THREE.CylinderGeometry(0.28, 0.5, 26, 6).translate(90, 133, 430));
+headG2.push(new THREE.SphereGeometry(0.9, 10, 8).translate(90, 147, 430));
+// river + quay + bridges
+const waterM = new THREE.MeshStandardMaterial({ color: 0x1e3a4c, roughness: 0.18, metalness: 0.55 });
+const waterG = new THREE.PlaneGeometry(2000, 130);
+waterG.rotateX(-Math.PI / 2);
+waterG.translate(0, 0.62, 810);
+const waterMesh = new THREE.Mesh(waterG, waterM);
+waterMesh.receiveShadow = true;
+scene.add(waterMesh);
+paveG2.push(box(2000, 1.7, 2.2, 0, 0.5, 743));
+for (const bx of [-160, 160]) {
+  paveG2.push(box(14, 0.5, 124, bx, 2.0, 806));
+  slateG2.push(box(0.5, 1.1, 124, bx - 6.8, 2.7, 806));
+  slateG2.push(box(0.5, 1.1, 124, bx + 6.8, 2.7, 806));
+}
+// far bank skyline silhouette
+block(-600, 880, 600, 960, 14, 20, 60);
 function tree2(x, z, s = 1) {
   trunkG2.push(new THREE.CylinderGeometry(0.16 * s, 0.26 * s, 2.6 * s, 7).translate(x, 1.0 + 1.3 * s, z));
   leafG2.push(new THREE.IcosahedronGeometry(1.8 * s, 1).translate(x, 1.0 + 3.6 * s, z));
@@ -1756,13 +1795,26 @@ const VIEWS = [
   { n: 'Forecourt', p: [-34, 5.5, 168], t: [0, 13, 96], k: '0' },
   { n: 'City', p: [-270, 170, 430], t: [0, 8, 60], k: '9' },
 ];
+const tourCurve = new THREE.CatmullRomCurve3([
+  V3(420, 150, 780), V3(210, 70, 440), V3(90, 26, 270), V3(26, 9, 170),
+  V3(3, 4.2, 120), V3(0, 3.6, 96), V3(0, 4.5, 86), V3(0, 10, 50),
+  V3(-11, 15, -8), V3(0, 18, -62), V3(10, 14, -8), V3(4, 9, 50),
+  V3(0.5, 4.2, 88), V3(0.5, 3.6, 97), V3(-6, 8, 130), V3(-60, 24, 230),
+  V3(-180, 60, 380), V3(-120, 130, 660),
+], true, 'catmullrom', 0.3);
+let tourT = 0;
 const hintEl = document.querySelector('.hint');
 function setMode(m) {
   if (mode === m) return;
   mode = m;
   tween = null;
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  if (m === 'orbit') {
+  if (m === 'tour') {
+    controls.enabled = false;
+    document.exitPointerLock();
+    if (avatar) avatar.g.visible = false;
+    hintEl.innerHTML = 'Drone tour / click or Esc to exit';
+  } else if (m === 'orbit') {
     document.exitPointerLock();
     if (avatar) avatar.g.visible = false;
     controls.enabled = true;
@@ -1779,13 +1831,15 @@ function setMode(m) {
   document.getElementById('mb-orbit').classList.toggle('on', m === 'orbit');
   document.getElementById('mb-fp').classList.toggle('on', m === 'fp');
   document.getElementById('mb-tp').classList.toggle('on', m === 'tp');
-  const showTouch = isTouch && m !== 'orbit';
+  document.getElementById('mb-tour').classList.toggle('on', m === 'tour');
+  const showTouch = isTouch && (m === 'fp' || m === 'tp');
   joyEl.style.display = showTouch ? 'block' : 'none';
   runEl.style.display = showTouch ? 'flex' : 'none';
 }
 document.getElementById('mb-orbit').onclick = () => setMode('orbit');
 document.getElementById('mb-fp').onclick = () => setMode('fp');
 document.getElementById('mb-tp').onclick = () => setMode('tp');
+document.getElementById('mb-tour').onclick = () => setMode('tour');
 let tween = null;
 function flyTo(v) {
   if (mode !== 'orbit') setMode('orbit');
@@ -1827,6 +1881,8 @@ addEventListener('keydown', e => {
   if (e.key === 'm' || e.key === 'M') toggleSound();
   if (e.code === 'Digit7') setMode('fp');
   if (e.code === 'Digit8') setMode('tp');
+  if (e.code === 'KeyT') setMode('tour');
+  if (e.key === 'Escape' && mode === 'tour') setMode('orbit');
   const i = +e.key - 1;
   if (e.key === '0' && VIEWS[6]) flyTo(VIEWS[6]);
   else if (e.key === '9' && VIEWS[7]) flyTo(VIEWS[7]);
@@ -1840,6 +1896,7 @@ addEventListener('mousemove', e => {
   }
 });
 renderer.domElement.addEventListener('click', () => {
+  if (mode === 'tour') { setMode('orbit'); return; }
   if (mode !== 'orbit' && document.pointerLockElement !== renderer.domElement) {
     try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
   }
@@ -1923,7 +1980,7 @@ controls.target.set(...VIEWS[startView].t);
 roofGroup.visible = !VIEWS[startView].roof;
 document.querySelectorAll('nav button')[startView].classList.add('active');
 const startMode = qs.get('m');
-if (startMode === 'fp' || startMode === 'tp') setMode(startMode);
+if (startMode === 'fp' || startMode === 'tp' || startMode === 'tour') setMode(startMode);
 
 const TRAIN_CYCLE = 70;
 function trainOffset(t) {
@@ -2051,6 +2108,11 @@ function loop() {
     if (tween.t >= 1) { tween = null; controls.enabled = true; }
   }
   if (mode === 'orbit') controls.update();
+  else if (mode === 'tour') {
+    tourT = (tourT + dt / 110) % 1;
+    camera.position.copy(tourCurve.getPointAt(tourT));
+    camera.lookAt(tourCurve.getPointAt((tourT + 0.018) % 1));
+  }
   else updateWalk(dt);
   composer.render();
 }
