@@ -163,7 +163,7 @@ try {
   document.getElementById('fail').style.display = 'grid';
   throw e;
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -448,7 +448,7 @@ const glossMat = new THREE.MeshStandardMaterial({ map: floorTex, transparent: tr
 function glossyFloor(w, l, x, z) {
   const rg = new THREE.PlaneGeometry(w, l);
   rg.rotateX(-Math.PI / 2);
-  const refl = new Reflector(rg, { clipBias: 0.003, textureWidth: 1536, textureHeight: 1536, color: 0x5e5e5e });
+  const refl = new Reflector(rg, { clipBias: 0.003, textureWidth: 768, textureHeight: 768, color: 0x5e5e5e });
   refl.position.set(x, 1.052, z);
   scene.add(refl);
   const top = new THREE.Mesh(slabTop(w, l, x, z), glossMat);
@@ -937,13 +937,11 @@ function makeCar(col) {
   const cab = new THREE.Mesh(new RoundedBoxGeometry(2.0, 0.75, 1.6, 3, 0.18), carGlass);
   cab.position.set(-0.25, 1.32, 0);
   gp.add(body, cab);
-  const wg = new THREE.CylinderGeometry(0.32, 0.32, 0.24, 10);
-  wg.rotateX(Math.PI / 2);
+  const wg4 = [];
   for (const [wx, wz] of [[-1.35, 0.82], [1.35, 0.82], [-1.35, -0.82], [1.35, -0.82]]) {
-    const wm = new THREE.Mesh(wg, iron);
-    wm.position.set(wx, 0.33, wz);
-    gp.add(wm);
+    wg4.push(new THREE.CylinderGeometry(0.32, 0.32, 0.24, 10).rotateX(Math.PI / 2).translate(wx, 0.33, wz));
   }
+  gp.add(new THREE.Mesh(mergeGeometries(wg4, false), iron));
   for (const hz of [-0.55, 0.55]) {
     const hl = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), bulbMat);
     hl.position.set(2.1, 0.62, hz);
@@ -951,13 +949,28 @@ function makeCar(col) {
   }
   return gp;
 }
+const carPalette = [0x7a3030, 0x2f4d6b, 0x9a8f6a, 0x3a3d42, 0x5c4a6e, 0xc09040, 0x8a4a6a, 0x4a6a8a, 0xb0b0a8, 0x6b3a2e];
 for (const [cx, cz, cc] of [[-52, 143.6, 0x7a3030], [-20, 143.6, 0x3a3d42], [24, 143.6, 0x2f4d6b], [58, 158.4, 0x9a8f6a], [-88, 158.4, 0x5c4a6e]]) {
   const c = makeCar(cc);
   c.position.set(cx, 1.05, cz);
   c.rotation.y = cz < 150 ? 0 : Math.PI;
   scene.add(c);
 }
-for (const [cx, cz, sp, cc] of [[-140, 148, 11, 0x7a3030], [60, 148, 13, 0x3a3d42], [-30, 153.4, -10, 0x9a8f6a]]) {
+for (let i = 0; i < 16; i++) {
+  const cx = -400 + rnd() * 800;
+  if (Math.abs(cx) < 48) continue;
+  const c = makeCar(carPalette[(rnd() * carPalette.length) | 0]);
+  const cz = rnd() < 0.5 ? 143.6 : 158.4;
+  c.position.set(cx, 1.05, cz);
+  c.rotation.y = cz < 150 ? 0 : Math.PI;
+  scene.add(c);
+}
+for (const [cx, cz, sp, cc] of [
+  [-140, 148, 11, 0x7a3030], [60, 148, 13, 0x3a3d42], [-30, 153.4, -10, 0x9a8f6a],
+  [-80, 148, 11.4, 0xc09040], [200, 148, 11.2, 0x8a4a6a], [-220, 153.4, -10.5, 0x4a6a8a],
+  [140, 153.4, -9.6, 0x8a8a4a], [320, 148, 12, 0xb0b0a8], [-330, 153.4, -10, 0x6b3a2e],
+  [-260, 148, 11.8, 0x2f6b6b], [400, 153.4, -11, 0x7a6a8a],
+]) {
   const c = makeCar(cc);
   c.position.set(cx, 1.05, cz);
   c.rotation.y = sp > 0 ? 0 : Math.PI;
@@ -1043,6 +1056,7 @@ function block(bx0, bz0, bx1, bz1, n, hmin, hmax) {
     if (rnd() < 0.6) clutterG.push(box(2.5 + rnd() * 2, 1 + rnd() * 1.2, 2, bx - bw * 0.2, ry + 0.7, bz - bd * 0.15));
     if (rnd() < 0.3) poleG2.push(new THREE.CylinderGeometry(0.08, 0.12, 6 + rnd() * 5, 5).translate(bx, ry + 3, bz));
     if (rnd() < 0.5) awnGeos[(rnd() * 4) | 0].push(box(bw * 0.6, 0.14, 1.8, bx, 4.2, bz - bd / 2 - 0.9, 0.3));
+    for (let h = 0; h < 3; h++) if (rnd() < 0.5) leafG2.push(new THREE.IcosahedronGeometry(0.9 + rnd() * 0.5, 1).translate(bx - bw / 2 + rnd() * bw, 1.7, bz - bd / 2 - 1.4));
   }
 }
 block(-140, 200, -50, 300, 5, 10, 26);
@@ -1138,6 +1152,16 @@ for (const px of [-38, -20, 20, 38]) {
   brickG2.push(box(4.5, 1.0, 4.5, px, 1.55, 96));
   leafG2.push(new THREE.IcosahedronGeometry(1.5, 1).translate(px, 3.0, 96));
 }
+// dense street trees on every avenue
+for (const rz of [320, 500, 700, -160, -340, -520]) for (let x = -400; x <= 400; x += 45) tree2(x + rnd() * 10, rz + (rnd() < 0.5 ? -9 : 9), 0.7 + rnd() * 0.6);
+for (const rx of [-160, -320, 160, 320]) for (let z = -500; z <= 720; z += 55) tree2(rx + (rnd() < 0.5 ? -9.5 : 9.5), z + rnd() * 8, 0.7 + rnd() * 0.6);
+for (let i = 0; i < 34; i++) {
+  const tx = -440 + rnd() * 880, tz = 160 + rnd() * 560;
+  if (Math.abs(tx) < 48 && tz < 330) continue;
+  tree2(tx, tz, 0.8 + rnd() * 0.9);
+}
+// chimneys on the west houses
+for (const [hx, hz] of [[-66, 108], [-81, 112], [-96, 108], [-111, 112]]) brickG2.push(box(0.9, 2.2, 0.9, hx + 2.6, 7.8, hz));
 mesh(roadG2, asphalt);
 mesh(paveG2, paveM);
 mesh(grassG2, grassM);
@@ -1160,7 +1184,10 @@ mesh(facG2b, facMat2, true);
 mesh(facG2c, facMat3, true);
 mesh(facG2d, facMat4, true);
 mesh(brickG2, brickMat, true);
-for (const [cx, cz, sp, cc] of [[-160, 200, 9, 0x4a6a3a], [160, -100, -11, 0x6a4a3a], [320, 300, 10, 0x3a5a6a], [-320, 0, -9, 0x7a7a6a]]) {
+for (const [cx, cz, sp, cc] of [
+  [-160, 200, 9, 0x4a6a3a], [160, -100, -11, 0x6a4a3a], [320, 300, 10, 0x3a5a6a], [-320, 0, -9, 0x7a7a6a],
+  [-157.5, -200, 8.5, 0xb07830], [163, 400, -9.5, 0x8a3030], [317, 100, 9, 0xd8c840], [-323.5, 250, -8.8, 0x3a3a3a],
+]) {
   const c = makeCar(cc);
   c.position.set(cx, 1.05, cz);
   c.rotation.y = sp > 0 ? -Math.PI / 2 : Math.PI / 2;
@@ -1554,7 +1581,7 @@ scene.add(new THREE.HemisphereLight(0xbfd2e0, 0x57493a, 0.95));
 const sun = new THREE.DirectionalLight(0xffd896, 3.3);
 sun.position.set(85, 78, 24);
 sun.castShadow = true;
-sun.shadow.mapSize.set(4096, 4096);
+sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.camera.left = -110;
 sun.shadow.camera.right = 110;
 sun.shadow.camera.top = 110;
@@ -1858,7 +1885,7 @@ controls.addEventListener('start', () => {
 });
 
 const composer = new EffectComposer(renderer);
-composer.setPixelRatio(Math.min(devicePixelRatio, 2));
+composer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.4, 0.55, 0.82);
 composer.addPass(bloom);
