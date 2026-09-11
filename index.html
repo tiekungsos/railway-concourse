@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Meridian Terminus - Concourse Study</title>
 <style>
   :root {
@@ -1847,39 +1847,61 @@ renderer.domElement.addEventListener('click', () => {
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const joyEl = document.getElementById('joy'), knobEl = document.getElementById('joyKnob'), runEl = document.getElementById('runBtn');
 const joyVec = { x: 0, y: 0 };
-let joyId = null, jx0 = 0, jy0 = 0, sprintTouch = false;
-joyEl.addEventListener('pointerdown', e => { joyId = e.pointerId; jx0 = e.clientX; jy0 = e.clientY; joyEl.setPointerCapture(joyId); });
-joyEl.addEventListener('pointermove', e => {
-  if (e.pointerId !== joyId) return;
-  const dx = e.clientX - jx0, dy = e.clientY - jy0, l = Math.hypot(dx, dy), m = Math.min(l, 40);
+let jx0 = 0, jy0 = 0, joyId = null, sprintTouch = false;
+function joyStart(x, y, id) { if (joyId === null) { joyId = id; jx0 = x; jy0 = y; } }
+function joyDrag(x, y, id) {
+  if (id !== joyId) return;
+  const dx = x - jx0, dy = y - jy0, l = Math.hypot(dx, dy), m = Math.min(l, 40);
   joyVec.x = l ? dx / l * m / 40 : 0;
   joyVec.y = l ? dy / l * m / 40 : 0;
   knobEl.style.transform = `translate(${l ? dx / l * m : 0}px,${l ? dy / l * m : 0}px)`;
-});
-const joyEnd = e => { if (e.pointerId === joyId) { joyId = null; joyVec.x = joyVec.y = 0; knobEl.style.transform = ''; } };
-joyEl.addEventListener('pointerup', joyEnd);
-joyEl.addEventListener('pointercancel', joyEnd);
-runEl.addEventListener('pointerdown', () => { sprintTouch = true; runEl.classList.add('on'); });
+}
+function joyStop(id) { if (id === joyId) { joyId = null; joyVec.x = joyVec.y = 0; knobEl.style.transform = ''; } }
+joyEl.addEventListener('pointerdown', e => { e.preventDefault(); joyStart(e.clientX, e.clientY, e.pointerId); try { joyEl.setPointerCapture(e.pointerId); } catch (_) {} });
+joyEl.addEventListener('pointermove', e => joyDrag(e.clientX, e.clientY, e.pointerId));
+joyEl.addEventListener('pointerup', e => joyStop(e.pointerId));
+joyEl.addEventListener('pointercancel', e => joyStop(e.pointerId));
+joyEl.addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0]; joyStart(t.clientX, t.clientY, 't' + t.identifier); }, { passive: false });
+joyEl.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) joyDrag(t.clientX, t.clientY, 't' + t.identifier); }, { passive: false });
+const joyTE = e => { for (const t of e.changedTouches) joyStop('t' + t.identifier); };
+joyEl.addEventListener('touchend', joyTE);
+joyEl.addEventListener('touchcancel', joyTE);
+function runDown() { sprintTouch = true; runEl.classList.add('on'); }
 const runEnd = () => { sprintTouch = false; runEl.classList.remove('on'); };
+runEl.addEventListener('pointerdown', runDown);
 runEl.addEventListener('pointerup', runEnd);
 runEl.addEventListener('pointercancel', runEnd);
+runEl.addEventListener('touchstart', e => { e.preventDefault(); runDown(); }, { passive: false });
+runEl.addEventListener('touchend', runEnd);
+runEl.addEventListener('touchcancel', runEnd);
 let lookId = null, lookX = 0, lookY = 0;
+function lookStart(x, y, id) { if (lookId === null) { lookId = id; lookX = x; lookY = y; } }
+function lookDrag(x, y, id) {
+  if (id !== lookId) return;
+  player.yaw -= (x - lookX) * 0.0045;
+  player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch - (y - lookY) * 0.0045));
+  lookX = x;
+  lookY = y;
+}
+function lookStop(id) { if (id === lookId) lookId = null; }
 renderer.domElement.addEventListener('pointerdown', e => {
   if (e.pointerType === 'mouse' || mode === 'orbit') return;
-  lookId = e.pointerId;
-  lookX = e.clientX;
-  lookY = e.clientY;
+  lookStart(e.clientX, e.clientY, e.pointerId);
 });
-addEventListener('pointermove', e => {
-  if (e.pointerId !== lookId) return;
-  player.yaw -= (e.clientX - lookX) * 0.0045;
-  player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch - (e.clientY - lookY) * 0.0045));
-  lookX = e.clientX;
-  lookY = e.clientY;
-});
-const lookEnd = e => { if (e.pointerId === lookId) lookId = null; };
-addEventListener('pointerup', lookEnd);
-addEventListener('pointercancel', lookEnd);
+addEventListener('pointermove', e => lookDrag(e.clientX, e.clientY, e.pointerId));
+addEventListener('pointerup', e => lookStop(e.pointerId));
+addEventListener('pointercancel', e => lookStop(e.pointerId));
+renderer.domElement.addEventListener('touchstart', e => {
+  if (mode === 'orbit' || lookId !== null) return;
+  const t = e.changedTouches[0];
+  lookStart(t.clientX, t.clientY, 't' + t.identifier);
+}, { passive: true });
+renderer.domElement.addEventListener('touchmove', e => {
+  for (const t of e.changedTouches) lookDrag(t.clientX, t.clientY, 't' + t.identifier);
+}, { passive: true });
+const lookTE = e => { for (const t of e.changedTouches) lookStop('t' + t.identifier); };
+addEventListener('touchend', lookTE);
+addEventListener('touchcancel', lookTE);
 controls.addEventListener('start', () => {
   if (!tween) document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
 });
