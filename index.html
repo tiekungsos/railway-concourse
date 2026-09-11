@@ -84,10 +84,32 @@
     position: fixed; inset: 0; z-index: 20; display: none; place-items: center;
     color: var(--ink); background: #14161a; font-size: 12px; letter-spacing: 0.1em;
   }
+  #joy {
+    position: fixed; left: 22px; bottom: 100px; z-index: 15;
+    width: 118px; height: 118px; border-radius: 50%;
+    border: 1px solid var(--chip-line); background: var(--chip);
+    backdrop-filter: blur(10px); display: none; touch-action: none;
+  }
+  #joyKnob {
+    position: absolute; left: 39px; top: 39px; width: 40px; height: 40px;
+    border-radius: 50%; background: rgba(236, 231, 220, 0.45);
+    pointer-events: none;
+  }
+  #runBtn {
+    position: fixed; right: 22px; bottom: 100px; z-index: 15;
+    width: 64px; height: 64px; border-radius: 50%; display: none;
+    border: 1px solid var(--chip-line); background: var(--chip);
+    color: var(--ink-dim); font: inherit; font-size: 10px; letter-spacing: 0.15em;
+    align-items: center; justify-content: center; touch-action: none;
+    user-select: none; -webkit-user-select: none; text-transform: uppercase;
+  }
+  #runBtn.on { color: var(--brass); border-color: rgba(201, 163, 91, 0.5); }
   @media (max-width: 900px) {
-    nav { max-width: calc(100vw - 24px); overflow-x: auto; }
+    nav { max-width: calc(100vw - 24px); overflow-x: auto; bottom: 14px; }
     .meta, .hint { display: none; }
     header { left: 20px; top: 18px; }
+    #joy { bottom: 86px; }
+    #runBtn { bottom: 86px; }
   }
 </style>
 </head>
@@ -110,6 +132,8 @@
   <button id="mb-fp">1P</button>
   <button id="mb-tp">3P</button>
 </div>
+<div id="joy"><div id="joyKnob"></div></div>
+<button id="runBtn">Run</button>
 <div class="hint">Drag to orbit / scroll to zoom<br>Keys 1-6 views / M ambience</div>
 <div id="fail"><p>WebGL unavailable in this browser.</p></div>
 
@@ -1064,9 +1088,9 @@ function footstep() {
   s.start(t0, Math.random() * 2, 0.15); s.stop(t0 + 0.16);
 }
 function updateWalk(dt) {
-  const mv = (keysDown.has('KeyW') || keysDown.has('ArrowUp') ? 1 : 0) - (keysDown.has('KeyS') || keysDown.has('ArrowDown') ? 1 : 0);
-  const mh = (keysDown.has('KeyD') || keysDown.has('ArrowRight') ? 1 : 0) - (keysDown.has('KeyA') || keysDown.has('ArrowLeft') ? 1 : 0);
-  const sp = (keysDown.has('ShiftLeft') || keysDown.has('ShiftRight')) ? 4.4 : 1.7;
+  const mv = (keysDown.has('KeyW') || keysDown.has('ArrowUp') ? 1 : 0) - (keysDown.has('KeyS') || keysDown.has('ArrowDown') ? 1 : 0) - joyVec.y;
+  const mh = (keysDown.has('KeyD') || keysDown.has('ArrowRight') ? 1 : 0) - (keysDown.has('KeyA') || keysDown.has('ArrowLeft') ? 1 : 0) + joyVec.x;
+  const sp = (keysDown.has('ShiftLeft') || keysDown.has('ShiftRight') || sprintTouch) ? 4.4 : 1.7;
   const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
   const rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
   let dx = fx * mv + rx * mh, dz = fz * mv + rz * mh;
@@ -1363,6 +1387,9 @@ function setMode(m) {
   document.getElementById('mb-orbit').classList.toggle('on', m === 'orbit');
   document.getElementById('mb-fp').classList.toggle('on', m === 'fp');
   document.getElementById('mb-tp').classList.toggle('on', m === 'tp');
+  const showTouch = isTouch && m !== 'orbit';
+  joyEl.style.display = showTouch ? 'block' : 'none';
+  runEl.style.display = showTouch ? 'flex' : 'none';
 }
 document.getElementById('mb-orbit').onclick = () => setMode('orbit');
 document.getElementById('mb-fp').onclick = () => setMode('fp');
@@ -1423,6 +1450,42 @@ renderer.domElement.addEventListener('click', () => {
     try { const r = renderer.domElement.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
   }
 });
+const isTouch = matchMedia('(pointer: coarse)').matches;
+const joyEl = document.getElementById('joy'), knobEl = document.getElementById('joyKnob'), runEl = document.getElementById('runBtn');
+const joyVec = { x: 0, y: 0 };
+let joyId = null, jx0 = 0, jy0 = 0, sprintTouch = false;
+joyEl.addEventListener('pointerdown', e => { joyId = e.pointerId; jx0 = e.clientX; jy0 = e.clientY; joyEl.setPointerCapture(joyId); });
+joyEl.addEventListener('pointermove', e => {
+  if (e.pointerId !== joyId) return;
+  const dx = e.clientX - jx0, dy = e.clientY - jy0, l = Math.hypot(dx, dy), m = Math.min(l, 40);
+  joyVec.x = l ? dx / l * m / 40 : 0;
+  joyVec.y = l ? dy / l * m / 40 : 0;
+  knobEl.style.transform = `translate(${l ? dx / l * m : 0}px,${l ? dy / l * m : 0}px)`;
+});
+const joyEnd = e => { if (e.pointerId === joyId) { joyId = null; joyVec.x = joyVec.y = 0; knobEl.style.transform = ''; } };
+joyEl.addEventListener('pointerup', joyEnd);
+joyEl.addEventListener('pointercancel', joyEnd);
+runEl.addEventListener('pointerdown', () => { sprintTouch = true; runEl.classList.add('on'); });
+const runEnd = () => { sprintTouch = false; runEl.classList.remove('on'); };
+runEl.addEventListener('pointerup', runEnd);
+runEl.addEventListener('pointercancel', runEnd);
+let lookId = null, lookX = 0, lookY = 0;
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' || mode === 'orbit') return;
+  lookId = e.pointerId;
+  lookX = e.clientX;
+  lookY = e.clientY;
+});
+addEventListener('pointermove', e => {
+  if (e.pointerId !== lookId) return;
+  player.yaw -= (e.clientX - lookX) * 0.0045;
+  player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch - (e.clientY - lookY) * 0.0045));
+  lookX = e.clientX;
+  lookY = e.clientY;
+});
+const lookEnd = e => { if (e.pointerId === lookId) lookId = null; };
+addEventListener('pointerup', lookEnd);
+addEventListener('pointercancel', lookEnd);
 controls.addEventListener('start', () => {
   if (!tween) document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
 });
